@@ -43,14 +43,26 @@ subjects:
     goodnotes: ["Sport*"]
     name: Sport
 
-# Fallback, falls WebUntis nicht erreichbar ist: Anzeigenamen je Wochentag
-# (Stand: Stundenplan KW 28/2026).
+# Fallback, falls WebUntis nicht erreichbar ist: Anzeigenamen je Wochentag.
+# Der Stundenplan läuft im Zwei-Wochen-Rhythmus: "even" = gerade Kalenderwoche
+# (z.B. KW 26, 28), "odd" = ungerade Kalenderwoche.
+# Im Normalbetrieb kommt der Plan immer live aus WebUntis (inkl. A/B-Woche,
+# Entfall und neuem Plan nach den Ferien) – dieser Block greift NUR bei
+# Untis-Ausfall und muss nach einem Planwechsel (z.B. nach den Ferien) einmal
+# von Hand aktualisiert werden.
 fallback_week:
-  mon: [Kunst, Ernährungslehre, Biologie]
-  tue: [Ernährungslehre, Englisch, Deutsch]
-  wed: [Philosophie, Physik, Biologie, Sozialwissenschaften]
-  thu: [Sport, Englisch, Sozialwissenschaften]
-  fri: [Philosophie, Englisch, Mathematik, Sport]
+  even:                            # Stand: KW 26+28/2026
+    mon: [Kunst, Ernährungslehre, Biologie]
+    tue: [Ernährungslehre, Englisch, Deutsch]
+    wed: [Philosophie, Physik, Biologie, Sozialwissenschaften]
+    thu: [Sport, Englisch, Sozialwissenschaften]
+    fri: [Philosophie, Englisch, Mathematik, Sport]
+  odd:                             # TODO: Plan der ungeraden Wochen eintragen,
+    mon: [Kunst, Ernährungslehre, Biologie]        # falls er sich unterscheidet
+    tue: [Ernährungslehre, Englisch, Deutsch]      # (aktuell: Kopie der geraden
+    wed: [Philosophie, Physik, Biologie, Sozialwissenschaften]  # Woche)
+    thu: [Sport, Englisch, Sozialwissenschaften]
+    fri: [Philosophie, Englisch, Mathematik, Sport]
 
 drive:
   backup_folder: "GoodNotes"      # Name des Auto-Backup-Ordners in Google Drive

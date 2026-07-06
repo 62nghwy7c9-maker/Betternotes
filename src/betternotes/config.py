@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class SubjectConfig(BaseModel):
@@ -34,11 +34,23 @@ class AppConfig(BaseModel):
     send_hour: int = 6
     recipient: str
     subjects: list[SubjectConfig]
-    fallback_week: dict[str, list[str]] = Field(default_factory=dict)
+    # Notfall-Wochenplan im Zwei-Wochen-Rhythmus: {"even"/"odd": {"mon": [Fächer]}}.
+    # Ein flaches {"mon": [Fächer]} gilt für beide Wochen.
+    fallback_week: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
     drive: DriveConfig = Field(default_factory=DriveConfig)
     news: NewsConfig = Field(default_factory=NewsConfig)
     max_pages_per_file: int = 12
     model: str = "claude-sonnet-5"
+
+    @field_validator("fallback_week", mode="before")
+    @classmethod
+    def _normalize_fallback_week(cls, value):
+        """Flaches {"mon": [...]} auf beide Wochen (even/odd) übertragen."""
+        if not isinstance(value, dict) or not value:
+            return value or {}
+        if set(value) <= {"even", "odd"}:
+            return value
+        return {"even": value, "odd": value}
 
     def subject_by_name(self, name: str) -> SubjectConfig | None:
         for s in self.subjects:

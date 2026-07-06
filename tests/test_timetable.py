@@ -12,9 +12,20 @@ def test_fallback_week(config):
 
 
 def test_fallback_ignores_unknown_subject(config):
-    config.fallback_week["mon"] = ["Mathematik", "Unbekanntes Fach"]
+    config.fallback_week["even"]["mon"] = ["Mathematik", "Unbekanntes Fach"]
     lessons = fallback_lessons(config, date(2026, 7, 6))
     assert [l.subject.name for l in lessons] == ["Mathematik"]
+
+
+def test_fallback_two_week_rotation(config):
+    config.fallback_week = {
+        "even": {"mon": ["Mathematik"]},
+        "odd": {"mon": ["Deutsch"]},
+    }
+    even_monday = date(2026, 7, 6)   # KW 28
+    odd_monday = date(2026, 7, 13)   # KW 29
+    assert [l.subject.name for l in fallback_lessons(config, even_monday)] == ["Mathematik"]
+    assert [l.subject.name for l in fallback_lessons(config, odd_monday)] == ["Deutsch"]
 
 
 def test_missing_credentials_fall_back(config):

@@ -79,8 +79,11 @@ Secrets anlegen.
 - **`subjects`**: je Fach die Untis-Kürzel (exakt wie im Stundenplan), die
   Goodnotes-Namensmuster und den Anzeigenamen eintragen. `news: true` beim
   Sowi-Eintrag aktiviert den Nachrichten-Block.
-- **`fallback_week`**: dein normaler Wochenplan (Anzeigenamen) – wird nur genutzt,
-  wenn WebUntis nicht erreichbar ist.
+- **`fallback_week`**: dein normaler Wochenplan (Anzeigenamen) im
+  Zwei-Wochen-Rhythmus (`even` = gerade, `odd` = ungerade Kalenderwoche) – wird
+  nur genutzt, wenn WebUntis nicht erreichbar ist. Nach einem Planwechsel
+  (z.B. nach den Ferien) einmal von Hand aktualisieren; der normale Betrieb
+  über WebUntis passt sich automatisch an.
 
 ## Testen
 

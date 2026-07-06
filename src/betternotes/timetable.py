@@ -60,7 +60,9 @@ def fetch_untis_lessons(config: AppConfig, secrets: Secrets, day: date) -> list[
 
 
 def fallback_lessons(config: AppConfig, day: date) -> list[Lesson]:
-    names = config.fallback_week.get(_WEEKDAY_KEYS[day.weekday()], [])
+    week_key = "even" if day.isocalendar().week % 2 == 0 else "odd"
+    plan = config.fallback_week.get(week_key, {})
+    names = plan.get(_WEEKDAY_KEYS[day.weekday()], [])
     lessons = []
     for name in names:
         subject = config.subject_by_name(name)
