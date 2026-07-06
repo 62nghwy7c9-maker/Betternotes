@@ -4,7 +4,7 @@ Ablauf jeden Morgen (vor dem Versand):
   1. Prüfen, ob jetzt gesendet werden soll (Zeitfenster + noch nicht gesendet).
   2. Stundenplan des Tages aus WebUntis holen -> nur die heutigen Fächer.
   3. Für diese Fächer die seit dem letzten Digest neuen Goodnotes-Dokumente
-     aus dem Drive-Backup einsammeln und auswerten.
+     aus dem Dropbox-Backup einsammeln und auswerten.
   4. Dokument bauen (inkl. Sowi-Nachrichten, falls Sowi heute) und mailen.
 """
 
@@ -47,12 +47,12 @@ def build_digest(
 
     # Neue Goodnotes-Dokumente einsammeln (nur für heutige Fächer herunterladen;
     # Notizen anderer Fächer bleiben bis zu deren Tag unangetastet im State).
-    drive = ingest.build_drive_service(secrets)
-    all_new = ingest.scan_new_documents(drive, config, state)
+    dbx = ingest.build_dropbox_client(secrets)
+    all_new = ingest.scan_new_documents(dbx, config, state)
     today_names = {s.name for s in subjects_today}
     relevant = [d for d in all_new if d.subject and d.subject.name in today_names]
     unmatched = [d for d in all_new if d.subject is None]
-    ingest.download_documents(drive, relevant, workdir / "pdf")
+    ingest.download_documents(dbx, relevant, workdir / "pdf")
 
     import anthropic
 
@@ -172,11 +172,17 @@ def main(argv: list[str] | None = None) -> int:
     run_parser.add_argument("--dry-run", action="store_true", help="keine Mail, kein State-Update")
     run_parser.add_argument("--output", help="Ausgabeverzeichnis für HTML/PDF")
     run_parser.add_argument("--force", action="store_true", help="Zeitfenster/Dedupe ignorieren")
+    sub.add_parser(
+        "dropbox-auth",
+        help="einmalige Dropbox-Verbindung einrichten (erzeugt den Refresh-Token)",
+    )
 
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if args.command == "run":
         return run(args)
+    if args.command == "dropbox-auth":
+        return ingest.run_auth_wizard()
     return 2
 
 

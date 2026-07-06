@@ -19,7 +19,7 @@ Jeden Schulmorgen um ca. **6:00 Uhr** eine E-Mail mit deiner persönlichen
 GitHub Actions (Mo–Fr, kurz vor 6:00 deutscher Zeit)
   1. guard      Zeitfenster + „heute schon gesendet?" prüfen
   2. timetable  WebUntis: Welche Fächer hast du heute? (Ausfälle werden gefiltert)
-  3. ingest     Google Drive: neue Goodnotes-Backup-PDFs seit dem letzten Digest,
+  3. ingest     Dropbox: neue Goodnotes-Backup-PDFs seit dem letzten Digest,
                 Zuordnung zu Fächern über Muster in config.yaml
   4. extract    PDF-Seiten → Claude Vision (liest auch Handschrift)
   5. summarize  Claude: Rückblick + Vorbereitung, Fachbegriffe in Klammern
@@ -30,25 +30,30 @@ GitHub Actions (Mo–Fr, kurz vor 6:00 deutscher Zeit)
 ```
 
 Goodnotes hat keine Lese-API – deshalb läuft alles über das eingebaute
-**automatische Backup** von Goodnotes nach Google Drive (PDF-Format).
+**automatische Backup** von Goodnotes nach Dropbox (PDF-Format).
 
 ## Einmalige Einrichtung
 
 ### 1. Goodnotes (iPad)
 
 1. Goodnotes → Einstellungen → **Cloud & Backup** → **Automatisches Backup** einschalten.
-2. Ziel: **Google Drive**, Dateiformat: **PDF**.
+2. Ziel: **Dropbox**, Dateiformat: **PDF** (kostenloses Dropbox-Konto reicht).
 3. Notizbücher pro Fach benennen oder in Fach-Ordner legen (z.B. `Mathe`, `Sowi`) –
    die Muster stehen in `config.yaml` unter `subjects[].goodnotes`.
 
-### 2. Google Drive API (Service Account)
+### 2. Dropbox-Verbindung (mit Einrichtungshilfe)
 
-1. [console.cloud.google.com](https://console.cloud.google.com) → neues Projekt →
-   **Google Drive API aktivieren**.
-2. **Service Account** anlegen → JSON-Schlüssel herunterladen.
-3. In Google Drive den Backup-Ordner (`GoodNotes`) mit der E-Mail-Adresse des
-   Service Accounts **teilen** (Betrachter genügt).
-4. Den kompletten JSON-Inhalt als Secret `GDRIVE_SERVICE_ACCOUNT_JSON` hinterlegen.
+1. Auf [dropbox.com/developers/apps](https://www.dropbox.com/developers/apps) →
+   **Create app** → „Scoped access" → „Full Dropbox" → beliebiger Name.
+2. Im Reiter **Permissions** die Haken bei `files.metadata.read` und
+   `files.content.read` setzen → **Submit**.
+3. Auf einem Rechner mit Python einmal ausführen:
+   ```bash
+   pip install -e . && betternotes dropbox-auth
+   ```
+   Die Einrichtungshilfe fragt App key/secret ab, zeigt einen Link („Erlauben"
+   klicken, Code zurückkopieren) und gibt dir am Ende die **3 fertigen Secrets**
+   aus: `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `DROPBOX_REFRESH_TOKEN`.
 
 ### 3. WebUntis
 
@@ -108,3 +113,9 @@ Probelauf (Ergebnis als Artefakt) oder mit `force` für einen echten Testversand
 - Bei Fehlern bekommst du eine kurze Fehler-Mail statt eines stillen Ausfalls.
 - `state/state.json` merkt sich verarbeitete Dateien und den letzten Versand und
   wird vom Workflow automatisch zurückcommittet.
+
+## Alle GitHub-Secrets im Überblick
+
+`DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `DROPBOX_REFRESH_TOKEN`,
+`WEBUNTIS_SERVER`, `WEBUNTIS_SCHOOL`, `WEBUNTIS_USER`, `WEBUNTIS_PASSWORD`,
+`ANTHROPIC_API_KEY`, `SMTP_HOST` (= `smtp.gmx.net`), `SMTP_USER`, `SMTP_PASSWORD`.

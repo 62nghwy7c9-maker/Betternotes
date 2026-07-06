@@ -19,7 +19,7 @@ class SubjectConfig(BaseModel):
         return code.strip().casefold() in (u.casefold() for u in self.untis)
 
 
-class DriveConfig(BaseModel):
+class StorageConfig(BaseModel):
     backup_folder: str = "GoodNotes"
 
 
@@ -37,7 +37,7 @@ class AppConfig(BaseModel):
     # Notfall-Wochenplan im Zwei-Wochen-Rhythmus: {"even"/"odd": {"mon": [Fächer]}}.
     # Ein flaches {"mon": [Fächer]} gilt für beide Wochen.
     fallback_week: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
-    drive: DriveConfig = Field(default_factory=DriveConfig)
+    storage: StorageConfig = Field(default_factory=StorageConfig)
     news: NewsConfig = Field(default_factory=NewsConfig)
     max_pages_per_file: int = 12
     model: str = "claude-sonnet-5"
@@ -67,7 +67,9 @@ class AppConfig(BaseModel):
 
 class Secrets(BaseModel):
     anthropic_api_key: str = ""
-    gdrive_service_account_json: str = ""
+    dropbox_app_key: str = ""
+    dropbox_app_secret: str = ""
+    dropbox_refresh_token: str = ""
     webuntis_server: str = ""
     webuntis_school: str = ""
     webuntis_user: str = ""
@@ -81,7 +83,9 @@ class Secrets(BaseModel):
     def from_env(cls) -> "Secrets":
         return cls(
             anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
-            gdrive_service_account_json=os.environ.get("GDRIVE_SERVICE_ACCOUNT_JSON", ""),
+            dropbox_app_key=os.environ.get("DROPBOX_APP_KEY", ""),
+            dropbox_app_secret=os.environ.get("DROPBOX_APP_SECRET", ""),
+            dropbox_refresh_token=os.environ.get("DROPBOX_REFRESH_TOKEN", ""),
             webuntis_server=os.environ.get("WEBUNTIS_SERVER", ""),
             webuntis_school=os.environ.get("WEBUNTIS_SCHOOL", ""),
             webuntis_user=os.environ.get("WEBUNTIS_USER", ""),

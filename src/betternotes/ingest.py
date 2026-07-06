@@ -1,11 +1,14 @@
-"""Google-Drive-Ingest: neue/geänderte Goodnotes-Backup-PDFs finden und laden."""
+"""Dropbox-Ingest: neue/geänderte Goodnotes-Backup-PDFs finden und laden.
+
+Goodnotes' Auto-Backup legt PDFs unter /<backup_folder> in Dropbox ab.
+Einmalige Autorisierung über `betternotes dropbox-auth` (Refresh-Token).
+"""
 
 from __future__ import annotations
 
 import fnmatch
-import io
-import json
 import logging
+from datetime import timezone
 from pathlib import Path
 
 from .config import AppConfig, Secrets, SubjectConfig
@@ -14,24 +17,24 @@ from .state import State
 
 log = logging.getLogger(__name__)
 
-SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+
+def build_dropbox_client(secrets: Secrets):
+    import dropbox
+
+    return dropbox.Dropbox(
+        app_key=secrets.dropbox_app_key,
+        app_secret=secrets.dropbox_app_secret,
+        oauth2_refresh_token=secrets.dropbox_refresh_token,
+    )
 
 
-def build_drive_service(secrets: Secrets):
-    from google.oauth2 import service_account
-    from googleapiclient.discovery import build
-
-    info = json.loads(secrets.gdrive_service_account_json)
-    creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
-    return build("drive", "v3", credentials=creds, cache_discovery=False)
-
-
-def match_subject(config: AppConfig, drive_path: str, name: str) -> SubjectConfig | None:
+def match_subject(config: AppConfig, rel_path: str, name: str) -> SubjectConfig | None:
     """Ordnet eine Backup-Datei über die goodnotes-Muster einem Fach zu.
 
-    Verglichen wird jede Pfadkomponente (Ordnernamen) und der Dateiname.
+    Verglichen wird jede Pfadkomponente (Ordnernamen), der Dateiname und der
+    Dateiname ohne Endung.
     """
-    parts = [p for p in drive_path.split("/") if p] + [name, Path(name).stem]
+    parts = [p for p in rel_path.split("/") if p] + [name, Path(name).stem]
     for subject in config.subjects:
         for pattern in subject.goodnotes:
             for part in parts:
@@ -40,89 +43,105 @@ def match_subject(config: AppConfig, drive_path: str, name: str) -> SubjectConfi
     return None
 
 
-def _list_folder(service, folder_id: str):
-    query = f"'{folder_id}' in parents and trashed = false"
-    page_token = None
+def _iter_entries(dbx, root: str):
+    result = dbx.files_list_folder(root, recursive=True)
     while True:
-        resp = (
-            service.files()
-            .list(
-                q=query,
-                fields="nextPageToken, files(id, name, mimeType, modifiedTime)",
-                pageToken=page_token,
-            )
-            .execute()
-        )
-        yield from resp.get("files", [])
-        page_token = resp.get("nextPageToken")
-        if not page_token:
+        yield from result.entries
+        if not result.has_more:
             return
+        result = dbx.files_list_folder_continue(result.cursor)
 
 
-def _find_backup_folder(service, folder_name: str) -> str | None:
-    resp = (
-        service.files()
-        .list(
-            q=(
-                "mimeType = 'application/vnd.google-apps.folder' "
-                f"and name = '{folder_name}' and trashed = false"
-            ),
-            fields="files(id, name)",
-        )
-        .execute()
-    )
-    files = resp.get("files", [])
-    return files[0]["id"] if files else None
-
-
-def scan_new_documents(service, config: AppConfig, state: State) -> list[NewDocument]:
+def scan_new_documents(dbx, config: AppConfig, state: State) -> list[NewDocument]:
     """Alle PDFs unterhalb des Backup-Ordners, die neuer sind als der letzte Lauf."""
-    root_id = _find_backup_folder(service, config.drive.backup_folder)
-    if root_id is None:
+    from dropbox.exceptions import ApiError
+    from dropbox.files import FileMetadata
+
+    root = "/" + config.storage.backup_folder.strip("/")
+    try:
+        entries = list(_iter_entries(dbx, root))
+    except ApiError as exc:
         log.warning(
-            "Backup-Ordner '%s' nicht gefunden – ist er mit dem Service-Account geteilt?",
-            config.drive.backup_folder,
+            "Backup-Ordner '%s' nicht lesbar (%s) – ist das Goodnotes-Auto-Backup "
+            "nach Dropbox aktiv?",
+            root,
+            exc,
         )
         return []
 
     new_docs: list[NewDocument] = []
-    stack: list[tuple[str, str]] = [(root_id, "")]
-    while stack:
-        folder_id, prefix = stack.pop()
-        for entry in _list_folder(service, folder_id):
-            if entry["mimeType"] == "application/vnd.google-apps.folder":
-                stack.append((entry["id"], f"{prefix}{entry['name']}/"))
-                continue
-            if not entry["name"].casefold().endswith(".pdf"):
-                continue
-            known = state.files.get(entry["id"])
-            if known and known.modified_time >= entry["modifiedTime"]:
-                continue
-            new_docs.append(
-                NewDocument(
-                    file_id=entry["id"],
-                    name=entry["name"],
-                    drive_path=prefix + entry["name"],
-                    modified_time=entry["modifiedTime"],
-                    subject=match_subject(config, prefix, entry["name"]),
-                )
+    for entry in entries:
+        if not isinstance(entry, FileMetadata):
+            continue
+        if not entry.name.casefold().endswith(".pdf"):
+            continue
+        modified = entry.server_modified.replace(tzinfo=timezone.utc).isoformat()
+        known = state.files.get(entry.id)
+        if known and known.modified_time >= modified:
+            continue
+        # Pfad relativ zum Backup-Ordner, z.B. "Mathe Q2/Analysis.pdf"
+        rel_path = entry.path_display.lstrip("/").split("/", 1)
+        rel_path = rel_path[1] if len(rel_path) > 1 else rel_path[0]
+        new_docs.append(
+            NewDocument(
+                file_id=entry.id,
+                name=entry.name,
+                drive_path=rel_path,
+                modified_time=modified,
+                subject=match_subject(config, rel_path, entry.name),
             )
+        )
     return new_docs
 
 
-def download_documents(service, docs: list[NewDocument], target_dir: str | Path) -> None:
-    from googleapiclient.http import MediaIoBaseDownload
-
+def download_documents(dbx, docs: list[NewDocument], target_dir: str | Path) -> None:
     target_dir = Path(target_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     for doc in docs:
-        request = service.files().get_media(fileId=doc.file_id)
-        buffer = io.BytesIO()
-        downloader = MediaIoBaseDownload(buffer, request)
-        done = False
-        while not done:
-            _, done = downloader.next_chunk()
-        local = target_dir / f"{doc.file_id}.pdf"
-        local.write_bytes(buffer.getvalue())
+        _, response = dbx.files_download(f"id:{doc.file_id}" if not doc.file_id.startswith("id:") else doc.file_id)
+        local = target_dir / (doc.file_id.replace("id:", "") + ".pdf")
+        local.write_bytes(response.content)
         doc.local_path = local
-        log.info("Heruntergeladen: %s (%s)", doc.drive_path, doc.subject.name if doc.subject else "ohne Fach")
+        log.info(
+            "Heruntergeladen: %s (%s)",
+            doc.drive_path,
+            doc.subject.name if doc.subject else "ohne Fach",
+        )
+
+
+def run_auth_wizard() -> int:
+    """Interaktive Einmal-Einrichtung: führt zum Dropbox-Refresh-Token.
+
+    Voraussetzung: eine eigene Dropbox-App unter https://www.dropbox.com/developers/apps
+    (Scoped access, Full Dropbox, Berechtigungen files.metadata.read + files.content.read).
+    """
+    from dropbox import Dropbox, DropboxOAuth2FlowNoRedirect
+
+    print("Betternotes – Dropbox-Einrichtung")
+    print("=" * 40)
+    print("Falls noch nicht geschehen: unter https://www.dropbox.com/developers/apps")
+    print('eine App anlegen ("Scoped access" + "Full Dropbox") und im Reiter')
+    print('"Permissions" die Haken bei files.metadata.read und files.content.read setzen.')
+    print()
+    app_key = input("App key (aus der App-Übersicht): ").strip()
+    app_secret = input("App secret ('Show' klicken): ").strip()
+
+    flow = DropboxOAuth2FlowNoRedirect(app_key, consumer_secret=app_secret, token_access_type="offline")
+    print()
+    print("1. Öffne diesen Link im Browser und klicke auf 'Erlauben':")
+    print("   " + flow.start())
+    print("2. Kopiere den angezeigten Code hierher.")
+    code = input("Code: ").strip()
+    result = flow.finish(code)
+
+    account = Dropbox(
+        app_key=app_key, app_secret=app_secret, oauth2_refresh_token=result.refresh_token
+    ).users_get_current_account()
+    print()
+    print(f"✅ Verbunden mit dem Dropbox-Konto von {account.name.display_name}.")
+    print()
+    print("Trage diese 3 Secrets in GitHub ein (Settings → Secrets → Actions):")
+    print(f"  DROPBOX_APP_KEY       = {app_key}")
+    print(f"  DROPBOX_APP_SECRET    = {app_secret}")
+    print(f"  DROPBOX_REFRESH_TOKEN = {result.refresh_token}")
+    return 0

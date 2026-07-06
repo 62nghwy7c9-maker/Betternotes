@@ -7,7 +7,7 @@ recipient: Kira.moewes@gmail.com
 
 # Fächer: Verbindung zwischen Untis-Kürzel und Goodnotes-Notizbüchern.
 #   untis:     Fachkürzel exakt wie sie in WebUntis erscheinen (Groß/Klein egal)
-#   goodnotes: Muster (fnmatch, * erlaubt) für Ordner-/Dateinamen im Drive-Backup
+#   goodnotes: Muster (fnmatch, * erlaubt) für Ordner-/Dateinamen im Dropbox-Backup
 #   name:      Anzeigename im Digest
 #   news:      true => an Tagen mit diesem Fach werden die Top-5-Nachrichten ergänzt
 subjects:
@@ -64,8 +64,8 @@ fallback_week:
     thu: [Sport, Englisch, Sozialwissenschaften]
     fri: [Philosophie, Englisch, Mathematik, Sport]
 
-drive:
-  backup_folder: "GoodNotes"      # Name des Auto-Backup-Ordners in Google Drive
+storage:
+  backup_folder: "GoodNotes"      # Name des Auto-Backup-Ordners in Dropbox
 
 news:
   days_back: 7

@@ -46,7 +46,9 @@ jobs:
       - name: Digest erstellen und versenden
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
           WEBUNTIS_SERVER: ${{ secrets.WEBUNTIS_SERVER }}
           WEBUNTIS_SCHOOL: ${{ secrets.WEBUNTIS_SCHOOL }}
           WEBUNTIS_USER: ${{ secrets.WEBUNTIS_USER }}
