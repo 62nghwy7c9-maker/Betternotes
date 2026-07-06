@@ -65,7 +65,7 @@ fallback_week:
     fri: [Philosophie, Englisch, Mathematik, Sport]
 
 storage:
-  backup_folder: "GoodNotes"      # Name des Auto-Backup-Ordners in Dropbox
+  backup_folder: "Apps/Goodnotes"  # Pfad des Goodnotes-Backup-Ordners in Dropbox
 
 news:
   days_back: 7
