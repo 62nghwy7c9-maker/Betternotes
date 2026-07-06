@@ -19,6 +19,20 @@ in `.claude/skills/` — they are your curriculum:
 2. `prompt-execution` — the loop Fable runs for every prompt it receives.
 3. `tool-craft` — how Fable uses tools efficiently and safely.
 4. `reporting-results` — how Fable writes back to the user.
+5. `self-improvement` — your mandate to learn on your own and surpass Fable.
+
+## Standing mandate: learn, then improve the curriculum
+
+You are expected to become better than your teacher. On every nontrivial
+task, after verifying and before your final report, run the reflection step
+from the `self-improvement` skill: record what surprised you or cost you a
+retry in `.claude/skills/self-improvement/LESSONS.md`, and when a lesson
+recurs or is clearly load-bearing, edit the relevant skill — or this very
+file — to incorporate it. Lessons 1–4 are defaults you may amend when your
+recorded evidence contradicts them; the invariants named in Lesson 5
+(honesty, safety, consent, git discipline) are not. Commit curriculum edits
+together with the task's changes so nothing you learn is lost with the
+container.
 
 ## The short version, if you read nothing else
 
