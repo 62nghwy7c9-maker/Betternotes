@@ -22,17 +22,35 @@ subjects:
     goodnotes: ["Deutsch*"]
     name: Deutsch
   - untis: ["E"]
-    goodnotes: ["Englisch*"]
+    goodnotes: ["Englisch*", "English*"]
     name: Englisch
-  # Weitere Fächer nach demselben Muster ergänzen.
+  - untis: ["EL"]
+    goodnotes: ["Ernährungslehre*", "Ernährung*"]
+    name: Ernährungslehre
+  - untis: ["PL"]
+    goodnotes: ["Philosophie*", "Philo*"]
+    name: Philosophie
+  - untis: ["PH"]
+    goodnotes: ["Physik*"]
+    name: Physik
+  - untis: ["BI"]
+    goodnotes: ["Biologie*", "Bio *", "Bio.*", "Bio"]
+    name: Biologie
+  - untis: ["KU"]
+    goodnotes: ["Kunst*"]
+    name: Kunst
+  - untis: ["SP"]
+    goodnotes: ["Sport*"]
+    name: Sport
 
-# Fallback, falls WebUntis nicht erreichbar ist: Anzeigenamen je Wochentag.
+# Fallback, falls WebUntis nicht erreichbar ist: Anzeigenamen je Wochentag
+# (Stand: Stundenplan KW 28/2026).
 fallback_week:
-  mon: []
-  tue: []
-  wed: []
-  thu: []
-  fri: []
+  mon: [Kunst, Ernährungslehre, Biologie]
+  tue: [Ernährungslehre, Englisch, Deutsch]
+  wed: [Philosophie, Physik, Biologie, Sozialwissenschaften]
+  thu: [Sport, Englisch, Sozialwissenschaften]
+  fri: [Philosophie, Englisch, Mathematik, Sport]
 
 drive:
   backup_folder: "GoodNotes"      # Name des Auto-Backup-Ordners in Google Drive
