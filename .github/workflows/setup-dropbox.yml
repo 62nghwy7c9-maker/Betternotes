@@ -1,0 +1,70 @@
+name: Setup Dropbox Token
+
+# Einmalige Hilfe: tauscht den Autorisierungs-Code gegen den dauerhaften
+# Refresh-Token (das kann diese Umgebung selbst nicht, weil sie Dropbox nicht
+# erreichen darf – GitHub Actions darf es). Nach erfolgreicher Einrichtung
+# kann dieser Workflow gelöscht werden.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_key:
+        description: "Dropbox App key"
+        required: true
+      app_secret:
+        description: "Dropbox App secret"
+        required: true
+      auth_code:
+        description: "Autorisierungs-Code (frisch über den Erlauben-Link erzeugt)"
+        required: true
+
+jobs:
+  exchange:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code gegen Refresh-Token tauschen und testen
+        env:
+          APP_KEY: ${{ inputs.app_key }}
+          APP_SECRET: ${{ inputs.app_secret }}
+          AUTH_CODE: ${{ inputs.auth_code }}
+        run: |
+          python3 - <<'PY'
+          import os, sys, json, urllib.request, urllib.parse, urllib.error
+
+          app_key = os.environ["APP_KEY"].strip()
+          app_secret = os.environ["APP_SECRET"].strip()
+          code = os.environ["AUTH_CODE"].strip()
+
+          def post(url, data):
+              body = urllib.parse.urlencode(data).encode()
+              req = urllib.request.Request(url, data=body)
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  print("::error::Fehler von Dropbox:", e.read().decode())
+                  sys.exit(1)
+
+          tok = post("https://api.dropboxapi.com/oauth2/token", {
+              "code": code,
+              "grant_type": "authorization_code",
+              "client_id": app_key,
+              "client_secret": app_secret,
+          })
+          refresh = tok.get("refresh_token")
+          if not refresh:
+              print("::error::Kein Refresh-Token erhalten:", json.dumps(tok))
+              sys.exit(1)
+
+          summary = os.environ["GITHUB_STEP_SUMMARY"]
+          with open(summary, "w") as f:
+              f.write("## ✅ Dropbox verbunden!\n\n")
+              f.write("Trage diese **3 Secrets** in GitHub ein\n")
+              f.write("(Settings → Secrets and variables → Actions → New repository secret):\n\n")
+              f.write("| Name | Wert |\n|---|---|\n")
+              f.write(f"| `DROPBOX_APP_KEY` | `{app_key}` |\n")
+              f.write(f"| `DROPBOX_APP_SECRET` | `{app_secret}` |\n")
+              f.write(f"| `DROPBOX_REFRESH_TOKEN` | `{refresh}` |\n\n")
+              f.write(f"Erteilte Berechtigungen (scopes): `{tok.get('scope','?')}`\n\n")
+          print("Refresh-Token erhalten. Siehe die Zusammenfassung dieses Laufs.")
+          PY
