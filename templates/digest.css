@@ -1,0 +1,85 @@
+@page {
+  size: A4;
+  margin: 18mm 16mm;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.45;
+  color: #1c2733;
+  margin: 0;
+}
+
+h1 {
+  font-size: 19pt;
+  margin: 0 0 10px;
+  color: #123c63;
+}
+
+h2 {
+  font-size: 14pt;
+  margin: 22px 0 6px;
+  padding-bottom: 3px;
+  border-bottom: 2px solid #2f6fa7;
+  color: #123c63;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-size: 12pt;
+  margin: 14px 0 4px;
+  color: #2f6fa7;
+  page-break-after: avoid;
+}
+
+h4 {
+  font-size: 11pt;
+  margin: 10px 0 2px;
+}
+
+ul, ol {
+  margin: 4px 0 10px;
+  padding-left: 20px;
+}
+
+li {
+  margin-bottom: 2px;
+}
+
+table.timetable {
+  border-collapse: collapse;
+  margin: 8px 0 4px;
+}
+
+table.timetable th,
+table.timetable td {
+  border: 1px solid #b9c8d6;
+  padding: 3px 12px;
+  text-align: left;
+  font-size: 10pt;
+}
+
+table.timetable th {
+  background: #e8f0f7;
+}
+
+p.note {
+  background: #fff6df;
+  border-left: 3px solid #e3b341;
+  padding: 5px 9px;
+  font-size: 10pt;
+  margin: 8px 0;
+}
+
+section {
+  page-break-inside: auto;
+}
+
+footer {
+  margin-top: 26px;
+  padding-top: 6px;
+  border-top: 1px solid #b9c8d6;
+  font-size: 8.5pt;
+  color: #66778a;
+}

@@ -1,0 +1,93 @@
+name: Daily Digest
+
+on:
+  schedule:
+    # 03:45 UTC greift im Sommer (05:45 CEST), 04:45 UTC im Winter (05:45 CET).
+    # guard.py beendet den jeweils falschen Lauf leise; Dedupe verhindert Doppelversand.
+    - cron: "45 3 * * 1-5"
+    - cron: "45 4 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Zeitfenster/Dedupe ignorieren (Testlauf mit echtem Versand)"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Dry-Run: kein Mailversand, kein State-Update"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: WeasyPrint-Systembibliotheken installieren
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 fonts-noto-color-emoji
+
+      - name: Betternotes installieren
+        run: pip install -e .
+
+      - name: Digest erstellen und versenden
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          WEBUNTIS_SERVER: ${{ secrets.WEBUNTIS_SERVER }}
+          WEBUNTIS_SCHOOL: ${{ secrets.WEBUNTIS_SCHOOL }}
+          WEBUNTIS_USER: ${{ secrets.WEBUNTIS_USER }}
+          WEBUNTIS_PASSWORD: ${{ secrets.WEBUNTIS_PASSWORD }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: |
+          FLAGS=""
+          if [ "${{ inputs.force }}" = "true" ]; then FLAGS="$FLAGS --force"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then FLAGS="$FLAGS --dry-run --output out"; fi
+          python -m betternotes run $FLAGS
+
+      - name: Dry-Run-Ergebnis als Artefakt sichern
+        if: inputs.dry_run == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-dry-run
+          path: out/
+
+      - name: State zurückcommitten
+        if: inputs.dry_run != true
+        run: |
+          if git diff --quiet -- state/state.json; then
+            echo "State unverändert."
+            exit 0
+          fi
+          git config user.name "betternotes-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/state.json
+          git commit -m "chore: update state after digest run [skip ci]"
+          git push
+
+  tests:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: python -m pytest -q

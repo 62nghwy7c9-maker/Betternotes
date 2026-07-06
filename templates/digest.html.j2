@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Tagesvorbereitung – {{ weekday }}, {{ date_str }}</title>
+<style>{{ css }}</style>
+</head>
+<body>
+<header>
+  <h1>Tagesvorbereitung – {{ weekday }}, {{ date_str }}</h1>
+  {% if digest.lessons %}
+  <table class="timetable">
+    <thead><tr><th>Fach</th><th>Zeit</th></tr></thead>
+    <tbody>
+    {% for lesson in digest.lessons %}
+      <tr>
+        <td>{{ lesson.subject.name }}</td>
+        <td>{% if lesson.start %}{{ lesson.start.strftime("%H:%M") }}{% if lesson.end %}–{{ lesson.end.strftime("%H:%M") }}{% endif %}{% else %}–{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% for note in digest.notes %}
+  <p class="note">⚠️ {{ note }}</p>
+  {% endfor %}
+</header>
+
+{% for section in digest.sections %}
+<section>
+  <h2>📘 {{ section.subject.name }}</h2>
+  {% if not section.had_new_notes %}
+  <p class="note">Keine neuen Notizen seit dem letzten Digest – unten die Vorbereitung auf Basis des bisherigen Stoffs.</p>
+  {% endif %}
+  {{ section.summary_md | md }}
+  {% if section.news_md %}
+  <h3>📰 Die wichtigsten Nachrichten der Woche</h3>
+  {{ section.news_md | md }}
+  {% endif %}
+</section>
+{% endfor %}
+
+{% if digest.misc_md %}
+<section>
+  <h2>🗂 Sonstiges (neue Notizen ohne Fach-Zuordnung)</h2>
+  {{ digest.misc_md | md }}
+</section>
+{% endif %}
+
+<footer>
+  <p>Automatisch erstellt von Betternotes · Goodnotes-Backup + WebUntis · Fachbegriffe sind in Klammern erklärt.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,48 @@
+# Betternotes-Konfiguration (keine Geheimnisse hier – Zugangsdaten kommen aus
+# GitHub Actions Secrets bzw. Umgebungsvariablen, siehe README §Einrichtung).
+
+timezone: Europe/Berlin
+send_hour: 6                      # Ziel-Uhrzeit (lokal) für die Morgen-Mail
+recipient: Kira.moewes@gmail.com
+
+# Fächer: Verbindung zwischen Untis-Kürzel und Goodnotes-Notizbüchern.
+#   untis:     Fachkürzel exakt wie sie in WebUntis erscheinen (Groß/Klein egal)
+#   goodnotes: Muster (fnmatch, * erlaubt) für Ordner-/Dateinamen im Drive-Backup
+#   name:      Anzeigename im Digest
+#   news:      true => an Tagen mit diesem Fach werden die Top-5-Nachrichten ergänzt
+subjects:
+  - untis: ["SW", "SOWI"]
+    goodnotes: ["Sowi*", "Sozialwissenschaften*"]
+    name: Sozialwissenschaften
+    news: true
+  - untis: ["M"]
+    goodnotes: ["Mathe*", "Mathematik*"]
+    name: Mathematik
+  - untis: ["D"]
+    goodnotes: ["Deutsch*"]
+    name: Deutsch
+  - untis: ["E"]
+    goodnotes: ["Englisch*"]
+    name: Englisch
+  # Weitere Fächer nach demselben Muster ergänzen.
+
+# Fallback, falls WebUntis nicht erreichbar ist: Anzeigenamen je Wochentag.
+fallback_week:
+  mon: []
+  tue: []
+  wed: []
+  thu: []
+  fri: []
+
+drive:
+  backup_folder: "GoodNotes"      # Name des Auto-Backup-Ordners in Google Drive
+
+news:
+  days_back: 7
+  count: 5
+  rss_fallbacks:
+    - https://newsfeed.zeit.de/index
+    - https://rss.dw.com/rdf/rss-de-all
+
+max_pages_per_file: 12            # jüngste Seiten je geänderter Datei für die Analyse
+model: claude-sonnet-5            # Anthropic-Modell für OCR + Zusammenfassungen
