@@ -67,12 +67,19 @@ API-Key unter [console.anthropic.com](https://console.anthropic.com) erstellen �
 Secret `ANTHROPIC_API_KEY`. Kosten: grob 5–15 ct pro Schultag (abhängig von der
 Seitenzahl deiner Notizen).
 
-### 5. E-Mail-Versand (GMX)
+### 5. E-Mail-Versand (Gmail)
 
-1. GMX → Einstellungen → POP3/IMAP **für externe Programme aktivieren**.
-2. Secrets: `SMTP_HOST` = `smtp.gmx.net`, `SMTP_USER` = deine GMX-Adresse,
-   `SMTP_PASSWORD` = dein GMX-Passwort (bzw. anwendungsspezifisches Passwort).
-3. Empfängerin steht in `config.yaml` (`recipient`).
+Die Mail wird über dein Gmail-Konto verschickt (an dich selbst). Dafür braucht
+Gmail ein **App-Passwort** (ein spezielles Passwort nur für Programme):
+
+1. In deinem Google-Konto die **Bestätigung in zwei Schritten** aktivieren
+   (myaccount.google.com → Sicherheit) – ohne sie gibt es keine App-Passwörter.
+2. Auf [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+   ein App-Passwort erstellen (Name z.B. „Betternotes"). Google zeigt einen
+   16-stelligen Code – **ohne Leerzeichen** kopieren.
+3. Secrets: `SMTP_HOST` = `smtp.gmail.com`, `SMTP_USER` = `Kira.moewes@gmail.com`,
+   `SMTP_PASSWORD` = das 16-stellige App-Passwort.
+4. Empfängerin steht in `config.yaml` (`recipient`, bereits `Kira.moewes@gmail.com`).
 
 ### 6. Secrets in GitHub eintragen
 
@@ -118,4 +125,5 @@ Probelauf (Ergebnis als Artefakt) oder mit `force` für einen echten Testversand
 
 `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `DROPBOX_REFRESH_TOKEN`,
 `WEBUNTIS_SERVER`, `WEBUNTIS_SCHOOL`, `WEBUNTIS_USER`, `WEBUNTIS_PASSWORD`,
-`ANTHROPIC_API_KEY`, `SMTP_HOST` (= `smtp.gmx.net`), `SMTP_USER`, `SMTP_PASSWORD`.
+`ANTHROPIC_API_KEY`, `SMTP_HOST` (= `smtp.gmail.com`), `SMTP_USER`
+(= `Kira.moewes@gmail.com`), `SMTP_PASSWORD` (Gmail-App-Passwort).
