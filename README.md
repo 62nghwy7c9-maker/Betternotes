@@ -21,8 +21,8 @@ GitHub Actions (Mo–Fr, kurz vor 6:00 deutscher Zeit)
   2. timetable  WebUntis: Welche Fächer hast du heute? (Ausfälle werden gefiltert)
   3. ingest     Dropbox: neue Goodnotes-Backup-PDFs seit dem letzten Digest,
                 Zuordnung zu Fächern über Muster in config.yaml
-  4. extract    PDF-Seiten → Claude Vision (liest auch Handschrift)
-  5. summarize  Claude: Rückblick + Vorbereitung, Fachbegriffe in Klammern
+  4. extract    PDF-Seiten → Gemini Vision (liest auch Handschrift)
+  5. summarize  Gemini: Rückblick + Vorbereitung, Fachbegriffe in Klammern
   6. news       nur an Sowi-Tagen: tagesschau/RSS → Top 5 der Woche
   7. render     HTML + PDF
   8. deliver    E-Mail-Versand
@@ -55,17 +55,22 @@ Goodnotes hat keine Lese-API – deshalb läuft alles über das eingebaute
    klicken, Code zurückkopieren) und gibt dir am Ende die **3 fertigen Secrets**
    aus: `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `DROPBOX_REFRESH_TOKEN`.
 
-### 3. WebUntis
+### 3. WebUntis (optional)
 
+Ohne WebUntis nutzt die App den festen Wochenplan aus `config.yaml` – zum Start
+kannst du diesen Schritt **überspringen**. Wenn du automatisch Vertretungen und
+Ausfälle berücksichtigen willst (und den Plan nach den Ferien nicht selbst
+pflegen möchtest), trage diese Secrets nach:
 Schulname und Server findest du in der Untis-App bzw. in der Login-URL
 (z.B. `https://mese.webuntis.com/WebUntis/?school=...` → Server `mese.webuntis.com`).
 Secrets: `WEBUNTIS_SERVER`, `WEBUNTIS_SCHOOL`, `WEBUNTIS_USER`, `WEBUNTIS_PASSWORD`.
 
-### 4. Anthropic (Claude)
+### 4. Google Gemini (kostenlos)
 
-API-Key unter [console.anthropic.com](https://console.anthropic.com) erstellen →
-Secret `ANTHROPIC_API_KEY`. Kosten: grob 5–15 ct pro Schultag (abhängig von der
-Seitenzahl deiner Notizen).
+Kostenlosen API-Schlüssel unter [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+erstellen (mit Google-Konto anmelden → „Create API key") → Secret `GEMINI_API_KEY`.
+Der Gratis-Tarif reicht für den täglichen Bedarf. Hinweis: Google darf Daten aus
+dem kostenlosen Tarif zur Produktverbesserung nutzen.
 
 ### 5. E-Mail-Versand (Gmail)
 
@@ -123,7 +128,10 @@ Probelauf (Ergebnis als Artefakt) oder mit `force` für einen echten Testversand
 
 ## Alle GitHub-Secrets im Überblick
 
-`DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `DROPBOX_REFRESH_TOKEN`,
-`WEBUNTIS_SERVER`, `WEBUNTIS_SCHOOL`, `WEBUNTIS_USER`, `WEBUNTIS_PASSWORD`,
-`ANTHROPIC_API_KEY`, `SMTP_HOST` (= `smtp.gmail.com`), `SMTP_USER`
+**Pflicht:** `GEMINI_API_KEY`, `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`,
+`DROPBOX_REFRESH_TOKEN`, `SMTP_HOST` (= `smtp.gmail.com`), `SMTP_USER`
 (= `Kira.moewes@gmail.com`), `SMTP_PASSWORD` (Gmail-App-Passwort).
+
+**Optional (nur für Live-Stundenplan mit Vertretungen):** `WEBUNTIS_SERVER`,
+`WEBUNTIS_SCHOOL`, `WEBUNTIS_USER`, `WEBUNTIS_PASSWORD`. Ohne diese nutzt die App
+den festen Wochenplan aus `config.yaml`.

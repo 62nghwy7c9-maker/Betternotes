@@ -5,38 +5,29 @@ import pytest
 from betternotes.config import AppConfig, SubjectConfig
 
 
-class FakeTextBlock:
-    type = "text"
+class FakeLLM:
+    """Minimaler Ersatz für LLMClient in Tests.
 
-    def __init__(self, text: str):
-        self.text = text
-
-
-class FakeResponse:
-    def __init__(self, text: str):
-        self.content = [FakeTextBlock(text)]
-
-
-class FakeMessages:
-    def __init__(self, reply: str):
-        self.reply = reply
-        self.calls: list[dict] = []
-
-    def create(self, **kwargs):
-        self.calls.append(kwargs)
-        return FakeResponse(self.reply)
-
-
-class FakeAnthropic:
-    """Minimaler Ersatz für anthropic.Anthropic in Tests."""
+    Zeichnet Aufrufe auf und liefert eine feste Antwort. `calls` enthält Tupel
+    (kind, system, prompt, images) – images ist None bei complete().
+    """
 
     def __init__(self, reply: str = "Antwort"):
-        self.messages = FakeMessages(reply)
+        self.reply = reply
+        self.calls: list[tuple] = []
+
+    def complete(self, system: str, prompt: str, max_tokens: int = 2048) -> str:
+        self.calls.append(("complete", system, prompt, None))
+        return self.reply
+
+    def transcribe(self, images, system: str, prompt: str, max_tokens: int = 4096) -> str:
+        self.calls.append(("transcribe", system, prompt, images))
+        return self.reply
 
 
 @pytest.fixture
-def fake_claude():
-    return FakeAnthropic()
+def fake_llm():
+    return FakeLLM()
 
 
 @pytest.fixture

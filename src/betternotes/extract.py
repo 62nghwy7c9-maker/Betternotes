@@ -1,15 +1,15 @@
 """Text aus Goodnotes-Backup-PDFs holen.
 
 Getippte Notizen enthalten echten PDF-Text; Handschrift besteht nur aus Strichen
-und wird als Bild an Claude Vision gegeben.
+und wird als Bild an das KI-Modell (Vision) gegeben.
 """
 
 from __future__ import annotations
 
-import base64
 import logging
 
 from .config import AppConfig
+from .llm import LLMClient
 from .models import NewDocument
 from . import prompts
 
@@ -20,8 +20,8 @@ RENDER_DPI = 150
 MIN_EMBEDDED_CHARS_PER_PAGE = 40
 
 
-def extract_text(client, config: AppConfig, doc: NewDocument) -> str:
-    """Text der letzten max_pages_per_file Seiten – eingebettet oder via Claude Vision."""
+def extract_text(llm: LLMClient, config: AppConfig, doc: NewDocument) -> str:
+    """Text der letzten max_pages_per_file Seiten – eingebettet oder via Vision."""
     import fitz  # PyMuPDF
 
     assert doc.local_path is not None, "Dokument wurde nicht heruntergeladen"
@@ -43,24 +43,5 @@ def extract_text(client, config: AppConfig, doc: NewDocument) -> str:
     finally:
         pdf.close()
 
-    log.info("%s: sende %d Seiten an Claude Vision.", doc.name, len(images))
-    content: list[dict] = [
-        {
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": "image/png",
-                "data": base64.standard_b64encode(png).decode("ascii"),
-            },
-        }
-        for png in images
-    ]
-    content.append({"type": "text", "text": "Transkribiere diese Notiz-Seiten."})
-
-    response = client.messages.create(
-        model=config.model,
-        max_tokens=4096,
-        system=prompts.TRANSCRIBE_SYSTEM,
-        messages=[{"role": "user", "content": content}],
-    )
-    return "".join(block.text for block in response.content if getattr(block, "type", "") == "text")
+    log.info("%s: sende %d Seiten an die KI (Vision).", doc.name, len(images))
+    return llm.transcribe(images, prompts.TRANSCRIBE_SYSTEM, "Transkribiere diese Notiz-Seiten.")

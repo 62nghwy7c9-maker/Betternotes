@@ -1,4 +1,4 @@
-"""Alle Claude-Prompts an einer Stelle, damit sie leicht angepasst werden können."""
+"""Alle KI-Prompts an einer Stelle, damit sie leicht angepasst werden können."""
 
 TRANSCRIBE_SYSTEM = (
     "Du transkribierst handschriftliche Schulnotizen einer deutschen Oberstufenschülerin. "

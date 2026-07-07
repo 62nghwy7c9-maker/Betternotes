@@ -1,4 +1,4 @@
-"""Sowi-Nachrichten: tagesschau-API + RSS-Fallbacks, Top-Auswahl durch Claude."""
+"""Sowi-Nachrichten: tagesschau-API + RSS-Fallbacks, Top-Auswahl durch die KI."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 import httpx
 
 from .config import AppConfig
+from .llm import LLMClient
 from . import prompts
 
 log = logging.getLogger(__name__)
@@ -88,7 +89,7 @@ def collect_items(config: AppConfig, today: date) -> list[NewsItem]:
     return fresh
 
 
-def top_news_markdown(anthropic_client, config: AppConfig, today: date) -> str:
+def top_news_markdown(llm: LLMClient, config: AppConfig, today: date) -> str:
     """Die N wichtigsten Sowi-Meldungen der letzten Tage als Markdown."""
     items = collect_items(config, today)
     if not items:
@@ -103,10 +104,4 @@ def top_news_markdown(anthropic_client, config: AppConfig, today: date) -> str:
         count=config.news.count,
         items=listing,
     )
-    response = anthropic_client.messages.create(
-        model=config.model,
-        max_tokens=2048,
-        system=prompts.NEWS_SYSTEM,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return "".join(block.text for block in response.content if getattr(block, "type", "") == "text").strip()
+    return llm.complete(prompts.NEWS_SYSTEM, prompt)

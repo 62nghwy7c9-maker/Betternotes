@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 from . import extract, ingest, mailer, news, render, summarize
 from .config import AppConfig, Secrets, load_config
 from .guard import should_run
+from .llm import LLMClient
 from .models import Digest, SubjectSection
 from .state import FileState, State, load_state, save_state
 from .timetable import get_todays_lessons, unique_subjects
@@ -54,9 +55,7 @@ def build_digest(
     unmatched = [d for d in all_new if d.subject is None]
     ingest.download_documents(dbx, relevant, workdir / "pdf")
 
-    import anthropic
-
-    client = anthropic.Anthropic(api_key=secrets.anthropic_api_key)
+    llm = LLMClient(api_key=secrets.gemini_api_key, model=config.model)
 
     sections: list[SubjectSection] = []
     for subject in subjects_today:
@@ -65,18 +64,18 @@ def build_digest(
         if subject_docs:
             texts = []
             for doc in subject_docs:
-                doc.text = extract.extract_text(client, config, doc)
+                doc.text = extract.extract_text(llm, config, doc)
                 texts.append(f"[Dokument: {doc.drive_path}]\n{doc.text}")
-            summary = summarize.summarize_subject(client, config, subject, texts, previous)
+            summary = summarize.summarize_subject(llm, config, subject, texts, previous)
             had_new = True
         else:
-            summary = summarize.prep_only(client, config, subject, previous)
+            summary = summarize.prep_only(llm, config, subject, previous)
             had_new = False
 
         news_md = ""
         if subject.news:
             log.info("%s ist heute – hole die Top-%d-Nachrichten.", subject.name, config.news.count)
-            news_md = news.top_news_markdown(client, config, day)
+            news_md = news.top_news_markdown(llm, config, day)
 
         sections.append(
             SubjectSection(subject=subject, summary_md=summary, news_md=news_md, had_new_notes=had_new)

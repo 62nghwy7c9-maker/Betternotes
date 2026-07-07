@@ -40,7 +40,7 @@ class AppConfig(BaseModel):
     storage: StorageConfig = Field(default_factory=StorageConfig)
     news: NewsConfig = Field(default_factory=NewsConfig)
     max_pages_per_file: int = 12
-    model: str = "claude-sonnet-5"
+    model: str = "gemini-2.5-flash"
 
     @field_validator("fallback_week", mode="before")
     @classmethod
@@ -66,7 +66,7 @@ class AppConfig(BaseModel):
 
 
 class Secrets(BaseModel):
-    anthropic_api_key: str = ""
+    gemini_api_key: str = ""
     dropbox_app_key: str = ""
     dropbox_app_secret: str = ""
     dropbox_refresh_token: str = ""
@@ -82,7 +82,7 @@ class Secrets(BaseModel):
     @classmethod
     def from_env(cls) -> "Secrets":
         return cls(
-            anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
+            gemini_api_key=os.environ.get("GEMINI_API_KEY", ""),
             dropbox_app_key=os.environ.get("DROPBOX_APP_KEY", ""),
             dropbox_app_secret=os.environ.get("DROPBOX_APP_SECRET", ""),
             dropbox_refresh_token=os.environ.get("DROPBOX_REFRESH_TOKEN", ""),

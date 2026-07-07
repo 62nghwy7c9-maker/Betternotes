@@ -73,8 +73,21 @@ def fallback_lessons(config: AppConfig, day: date) -> list[Lesson]:
     return lessons
 
 
+def _untis_configured(secrets: Secrets) -> bool:
+    return bool(
+        secrets.webuntis_server and secrets.webuntis_school and secrets.webuntis_user
+    )
+
+
 def get_todays_lessons(config: AppConfig, secrets: Secrets, day: date) -> tuple[list[Lesson], str]:
     """Liefert (Stunden, Hinweistext). Hinweistext ist leer, wenn Untis funktioniert hat."""
+    if not _untis_configured(secrets):
+        # WebUntis wurde bewusst nicht eingerichtet -> fester Wochenplan, dezenter Hinweis.
+        log.info("WebUntis nicht eingerichtet – nutze festen Wochenplan.")
+        return fallback_lessons(config, day), (
+            "Stundenplan aus dem festen Wochenplan (WebUntis ist nicht eingerichtet, "
+            "daher keine Vertretungen/Ausfälle)."
+        )
     try:
         return fetch_untis_lessons(config, secrets, day), ""
     except TimetableError as exc:

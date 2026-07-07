@@ -75,4 +75,4 @@ news:
     - https://rss.dw.com/rdf/rss-de-all
 
 max_pages_per_file: 12            # jüngste Seiten je geänderter Datei für die Analyse
-model: claude-sonnet-5            # Anthropic-Modell für OCR + Zusammenfassungen
+model: gemini-2.5-flash          # Google-Gemini-Modell für OCR + Zusammenfassungen

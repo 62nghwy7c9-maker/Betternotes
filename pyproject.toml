@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Täglicher Lern-Digest aus Goodnotes-Backups und dem Untis-Stundenplan"
 requires-python = ">=3.11"
 dependencies = [
-    "anthropic>=0.40",
+    "google-genai>=1.0",
     "dropbox>=12.0",
     "webuntis>=0.1.22",
     "PyMuPDF>=1.24",
